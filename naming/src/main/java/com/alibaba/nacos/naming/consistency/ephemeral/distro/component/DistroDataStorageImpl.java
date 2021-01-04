@@ -16,15 +16,15 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.component;
 
-import com.alibaba.nacos.core.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.component.DistroDataStorage;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.component.DistroDataStorage;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.core.DistroMapper;
 
 import java.util.HashMap;
@@ -56,6 +56,14 @@ public class DistroDataStorageImpl implements DistroDataStorage {
             result.put(distroKey.getResourceKey(), datum);
         }
         byte[] dataContent = ApplicationUtils.getBean(Serializer.class).serialize(result);
+        return new DistroData(distroKey, dataContent);
+    }
+    
+    @Override
+    public DistroData getDatumSnapshot() {
+        Map<String, Datum> result = dataStore.getDataMap();
+        byte[] dataContent = ApplicationUtils.getBean(Serializer.class).serialize(result);
+        DistroKey distroKey = new DistroKey("snapshot", KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
         return new DistroData(distroKey, dataContent);
     }
     

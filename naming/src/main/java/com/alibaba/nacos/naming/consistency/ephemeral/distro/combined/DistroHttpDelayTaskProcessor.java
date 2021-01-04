@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
-import com.alibaba.nacos.common.task.AbstractDelayTask;
+import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.DistroTaskEngineHolder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.task.delay.DistroDelayTask;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
+import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 
 /**
@@ -50,12 +50,12 @@ public class DistroHttpDelayTaskProcessor implements NacosTaskProcessor {
     }
     
     @Override
-    public boolean process(AbstractDelayTask task) {
+    public boolean process(NacosTask task) {
         DistroDelayTask distroDelayTask = (DistroDelayTask) task;
         DistroKey distroKey = distroDelayTask.getDistroKey();
         DistroHttpCombinedKeyExecuteTask executeTask = new DistroHttpCombinedKeyExecuteTask(globalConfig,
                 distroTaskEngineHolder.getDelayTaskExecuteEngine(), distroKey, distroDelayTask.getAction());
-        distroTaskEngineHolder.getExecuteWorkersManager().dispatch(distroKey, executeTask);
+        distroTaskEngineHolder.getExecuteWorkersManager().addTask(distroKey, executeTask);
         return true;
     }
 }

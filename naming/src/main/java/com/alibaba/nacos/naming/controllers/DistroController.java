@@ -18,15 +18,13 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroHttpData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.DistroProtocol;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroData;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.newimpl.entity.DistroKey;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -53,12 +51,6 @@ import java.util.Map;
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/distro")
 public class DistroController {
-    
-    @Autowired
-    private Serializer serializer;
-    
-    @Autowired
-    private DataStore dataStore;
     
     @Autowired
     private DistroProtocol distroProtocol;
@@ -92,8 +84,7 @@ public class DistroController {
                         .isDefaultInstanceEphemeral()) {
                     serviceManager.createEmptyService(namespaceId, serviceName, true);
                 }
-                DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(entry.getKey()), null,
-                        entry.getValue());
+                DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(entry.getKey()), entry.getValue());
                 distroProtocol.onReceive(distroHttpData);
             }
         }
@@ -109,7 +100,7 @@ public class DistroController {
      */
     @PutMapping("/checksum")
     public ResponseEntity syncChecksum(@RequestParam String source, @RequestBody Map<String, String> dataMap) {
-        DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(source), null, dataMap);
+        DistroHttpData distroHttpData = new DistroHttpData(createDistroKey(source), dataMap);
         distroProtocol.onVerify(distroHttpData);
         return ResponseEntity.ok("ok");
     }
@@ -142,8 +133,8 @@ public class DistroController {
      */
     @GetMapping("/datums")
     public ResponseEntity getAllDatums() {
-        byte[] content = serializer.serialize(dataStore.getDataMap());
-        return ResponseEntity.ok(content);
+        DistroData distroData = distroProtocol.onSnapshot(KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
+        return ResponseEntity.ok(distroData.getContent());
     }
     
     private DistroKey createDistroKey(String resourceKey) {
